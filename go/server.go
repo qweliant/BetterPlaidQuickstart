@@ -9,19 +9,18 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 	"github.com/plaid/plaid-go/plaid"
 )
 
 var (
-	PLAID_CLIENT_ID                   = ""
-	PLAID_SECRET                      = ""
-	PLAID_ENV                         = ""
-	PLAID_PRODUCTS                    = ""
-	PLAID_COUNTRY_CODES               = ""
-	PLAID_REDIRECT_URI                = ""
-	APP_PORT                          = ""
-	client              *plaid.Client = nil
+	// set constants from env
+	PLAID_CLIENT_ID     = os.Getenv("PLAID_CLIENT_ID")
+	PLAID_SECRET        = os.Getenv("PLAID_SECRET")
+	PLAID_ENV           = os.Getenv("PLAID_ENV")
+	PLAID_PRODUCTS      = os.Getenv("PLAID_PRODUCTS")
+	PLAID_COUNTRY_CODES = os.Getenv("PLAID_COUNTRY_CODES")
+	PLAID_REDIRECT_URI  = os.Getenv("PLAID_REDIRECT_URI")
+	APP_PORT            = os.Getenv("APP_PORT")
 )
 
 var environments = map[string]plaid.Environment{
@@ -31,20 +30,6 @@ var environments = map[string]plaid.Environment{
 }
 
 func init() {
-	// load env vars from .env file
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file. Did you copy .env.example to .env and fill it out?")
-	}
-
-	// set constants from env
-	PLAID_CLIENT_ID = os.Getenv("PLAID_CLIENT_ID")
-	PLAID_SECRET = os.Getenv("PLAID_SECRET")
-	PLAID_ENV = os.Getenv("PLAID_ENV")
-	PLAID_PRODUCTS = os.Getenv("PLAID_PRODUCTS")
-	PLAID_COUNTRY_CODES = os.Getenv("PLAID_COUNTRY_CODES")
-	PLAID_REDIRECT_URI = os.Getenv("PLAID_REDIRECT_URI")
-	APP_PORT = os.Getenv("APP_PORT")
 
 	// set defaults
 	if PLAID_PRODUCTS == "" {
@@ -65,9 +50,10 @@ func init() {
 	if PLAID_SECRET == "" {
 		log.Fatal("PLAID_SECRET is not set. Make sure to fill out the .env file")
 	}
+}
 
-	// create Plaid client
-	client, err = plaid.NewClient(plaid.ClientOptions{
+var client = func() *plaid.Client {
+	client, err := plaid.NewClient(plaid.ClientOptions{
 		PLAID_CLIENT_ID,
 		PLAID_SECRET,
 		environments[PLAID_ENV],
@@ -76,19 +62,13 @@ func init() {
 	if err != nil {
 		panic(fmt.Errorf("unexpected error while initializing plaid client %w", err))
 	}
-}
+	return client
+}()
 
 func main() {
-	r := gin.Default()
-	mainPage := "../html/index.html"
-	oauthPage := "../html/oauth-response.html"
-	r.LoadHTMLFiles(mainPage, oauthPage)
-	r.Static("/static", "../static")
 
+	r := gin.Default()
 	r.POST("/api/info", info)
-	r.GET("/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "index.html", gin.H{})
-	})
 
 	// For OAuth flows, the process looks as follows.
 	// 1. Create a link token with the redirectURI (as white listed at https://dashboard.plaid.com/team/api).
@@ -96,9 +76,6 @@ func main() {
 	// additional parameters (as required by OAuth standards and Plaid).
 	// 3. Re-initialize with the link token (from step 1) and the full received redirect URI
 	// from step 2.
-	r.GET("/oauth-response.html", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "oauth-response.html", gin.H{})
-	})
 
 	r.POST("/api/set_access_token", getAccessToken)
 	r.POST("/api/create_link_token_for_payment", createLinkTokenForPayment)
@@ -367,18 +344,16 @@ func (httpError *httpError) Error() string {
 }
 
 // linkTokenCreate creates a link token using the specified parameters
-func linkTokenCreate(
-	paymentInitiation *plaid.PaymentInitiation,
-) (string, *httpError) {
+func linkTokenCreate(paymentInitiation *plaid.PaymentInitiation) (string, *httpError) {
 	countryCodes := strings.Split(PLAID_COUNTRY_CODES, ",")
 	products := strings.Split(PLAID_PRODUCTS, ",")
 	redirectURI := PLAID_REDIRECT_URI
 	configs := plaid.LinkTokenConfigs{
 		User: &plaid.LinkTokenUser{
 			// This should correspond to a unique id for the current user.
-			ClientUserID: "user-id",
+			ClientUserID: time.Now().String(),
 		},
-		ClientName:        "Plaid Quickstart",
+		ClientName:        "tapfunds",
 		Products:          products,
 		CountryCodes:      countryCodes,
 		Language:          "en",
@@ -386,6 +361,7 @@ func linkTokenCreate(
 		PaymentInitiation: paymentInitiation,
 	}
 	resp, err := client.CreateLinkToken(configs)
+
 	if err != nil {
 		return "", &httpError{
 			errorCode: http.StatusBadRequest,

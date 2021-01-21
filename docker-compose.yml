@@ -1,45 +1,21 @@
-version: "3.4"
-x-environment: &QUICKSTART_ENVIRONMENT
-  # These are read from .env file. The values in the .env file maybe overriden by shell envvars
-  PLAID_CLIENT_ID: ${PLAID_CLIENT_ID}
-  PLAID_SECRET: ${PLAID_SECRET}
-  PLAID_PRODUCTS: ${PLAID_PRODUCTS}
-  PLAID_COUNTRY_CODES: ${PLAID_COUNTRY_CODES}
-  PLAID_REDIRECT_URI: ${PLAID_REDIRECT_URI}
-  PLAID_ENV: ${PLAID_ENV}
+version: "3.8"
+
 services:
   go:
+    env_file:
+    - .env
     build:
       context: .
       dockerfile: ./go/Dockerfile
     ports: ["8000:8000"]
-    environment:
-      << : *QUICKSTART_ENVIRONMENT
-  java:
+    restart: on-failure
+  client:
+    stdin_open: true
+    env_file:
+      - .env
     build:
       context: .
-      dockerfile: ./java/Dockerfile
-    ports: ["8000:8000"]
-    environment:
-      << : *QUICKSTART_ENVIRONMENT
-  node:
-    build:
-      context: .
-      dockerfile: ./node/Dockerfile
-    ports: ["8000:8000"]
-    environment:
-      << : *QUICKSTART_ENVIRONMENT
-  python:
-    build:
-      context: .
-      dockerfile: ./python/Dockerfile
-    ports: ["8000:8000"]
-    environment:
-      << : *QUICKSTART_ENVIRONMENT
-  ruby:
-    build:
-      context: .
-      dockerfile: ./ruby/Dockerfile
-    ports: ["8000:8000"]
-    environment:
-      << : *QUICKSTART_ENVIRONMENT
+      dockerfile: ./plaid/Dockerfile
+    ports:
+      - 80:80
+    restart: on-failure
