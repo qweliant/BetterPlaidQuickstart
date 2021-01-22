@@ -7,7 +7,7 @@ import qs from "qs";
 const tokenURL = `http://localhost:8000/api/create_link_token`;
 const sendTokenURL = `http://localhost:8000/api/set_access_token`;
 
-function Link() {
+const  Link = () => {
   const [data, setData] = useState("");
   
   const fetchToken = useCallback(async () => {
@@ -48,7 +48,7 @@ function Link() {
   };
 
   const { open, ready, err } = usePlaidLink(config);
-  // make an
+
   if (err) return <p>Error!</p>;
 
   return (
