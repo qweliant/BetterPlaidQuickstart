@@ -1,5 +1,7 @@
 import logo from './logo.svg';
 import './App.css';
+import Link from './Link'
+
 
 function App() {
   return (
@@ -9,6 +11,7 @@ function App() {
         <p>
           Burr <code>src/App.js</code> and save to reload.
         </p>
+        <Link/>
         <a
           className="App-link"
           href="https://reactjs.org"
