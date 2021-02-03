@@ -102,7 +102,7 @@ func main() {
 	r.GET("/api/balance", balance)
 	r.GET("/api/item", item)
 	r.POST("/api/item", item)
-	r.GET("/api/identity", identity)
+	r.POST("/api/identity", identity)
 	r.GET("/api/transactions", transactions)
 	r.POST("/api/transactions", transactions)
 	r.GET("/api/payment", payment)
@@ -251,7 +251,8 @@ func item(c *gin.Context) {
 }
 
 func identity(c *gin.Context) {
-	response, err := client.GetIdentity(accessToken)
+	accessToke := c.PostForm("access_token")
+	response, err := client.GetIdentity(accessToke)
 	if err != nil {
 		renderError(c, err)
 		return
