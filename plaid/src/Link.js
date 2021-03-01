@@ -3,9 +3,8 @@ import { usePlaidLink } from "react-plaid-link";
 import axios from "axios";
 import qs from "qs";
 
-
-const tokenURL = `http://localhost:8000/api/create_link_token`;
-const sendTokenURL = `http://localhost:8000/api/set_access_token`;
+const tokenURL = `${process.env.API}/api/create_link_token`;
+const sendTokenURL = `${process.env.API}/api/set_access_token`;
 
 const  Link = () => {
   const [data, setData] = useState("");
