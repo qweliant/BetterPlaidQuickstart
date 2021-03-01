@@ -3,19 +3,9 @@ version: "3.8"
 services:
   go:
     env_file:
-    - .env
+    - ./go/.env
     build:
       context: .
       dockerfile: ./go/Dockerfile
     ports: ["8000:8000"]
-    restart: on-failure
-  client:
-    stdin_open: true
-    env_file:
-      - .env
-    build:
-      context: .
-      dockerfile: ./plaid/Dockerfile
-    ports:
-      - 80:80
     restart: on-failure
